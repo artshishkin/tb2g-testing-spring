@@ -1,6 +1,6 @@
 package org.springframework.samples.petclinic.web;
 
-import org.assertj.core.api.Assertions;
+import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -10,15 +10,22 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.samples.petclinic.model.Vet;
 import org.springframework.samples.petclinic.model.Vets;
 import org.springframework.samples.petclinic.service.ClinicService;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.RequestBuilder;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.CoreMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @ExtendWith(MockitoExtension.class)
 class VetControllerTest {
@@ -29,10 +36,24 @@ class VetControllerTest {
     @InjectMocks
     VetController vetController;
 
+    MockMvc mockMvc;
+
     @BeforeEach
     void setUp() {
         given(clinicService.findVets()).willReturn(Arrays.asList(new Vet(), new Vet()));
 
+        mockMvc = MockMvcBuilders.standaloneSetup(vetController).build();
+
+    }
+
+    @Test
+    void testControllerShowVetList() throws Exception {
+        mockMvc
+                .perform(get("/vets.html"))
+                .andExpect(status().isOk())
+                .andExpect(model().attributeExists("vets"))
+                .andExpect(model().attribute("vets", instanceOf(Vets.class)))
+                .andExpect(view().name("vets/vetList"));
     }
 
     @Test
