@@ -8,12 +8,18 @@ import org.springframework.samples.petclinic.model.Owner;
 import org.springframework.samples.petclinic.service.ClinicService;
 import org.springframework.test.context.junit.jupiter.web.SpringJUnitWebConfig;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.util.Collections;
+
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.BDDMockito.given;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringJUnitWebConfig(locations = {"classpath:spring/mvc-test-config.xml","classpath:spring/mvc-core-config.xml"})
+@SpringJUnitWebConfig(locations = {"classpath:spring/mvc-test-config.xml", "classpath:spring/mvc-core-config.xml"})
 class OwnerControllerTest {
 
     @Autowired
@@ -22,11 +28,14 @@ class OwnerControllerTest {
     @Autowired
     ClinicService clinicService;
 
-    MockMvc mockMvc;
+    private MockMvc mockMvc;
+    private Owner owner;
 
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.standaloneSetup(ownerController).build();
+        owner = new Owner();
+        owner.setLastName("LastName");
     }
 
     @Test
@@ -36,5 +45,14 @@ class OwnerControllerTest {
                 .andExpect(view().name("owners/createOrUpdateOwnerForm"))
                 .andExpect(model().attributeExists("owner"))
                 .andExpect(model().attribute("owner", CoreMatchers.instanceOf(Owner.class)));
+    }
+
+
+    @Test
+    void processFindByNameNotFound() throws Exception {
+//        given(clinicService.findOwnerByLastName("Art")).willReturn(Collections.singletonList(owner));
+        mockMvc.perform(get("/owners").param("lastName", "NoName"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("owners/findOwners"));
     }
 }
