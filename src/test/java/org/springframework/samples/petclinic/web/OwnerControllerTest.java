@@ -20,6 +20,7 @@ import org.springframework.test.context.junit.jupiter.web.SpringJUnitWebConfig;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.Arrays;
@@ -64,6 +65,35 @@ class OwnerControllerTest {
         //It did not worked in John Thompson's test. So he added that reset
         //But it is not recommended by the docs
 //        reset(clinicService);
+    }
+
+    @Test
+    void testNewOwnerPostValid() throws Exception {
+        mockMvc.perform(
+                post("/owners/new")
+                        .param("firstName", "Foo")
+                        .param("lastName", "Bar")
+                        .param("address", "UnFavouriteStreet 15")
+                        .param("city", "Kram")
+                        .param("telephone", "1234567890"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(model().hasNoErrors())
+                .andExpect(view().name(startsWith("redirect:/owners/")));
+    }
+
+    @Test
+    void testNewOwnerPostInvalid() throws Exception {
+        mockMvc.perform(
+                post("/owners/new")
+                        .param("firstName", "Foo")
+                        .param("lastName", "Bar")
+//                        .param("address", "UnFavouriteStreet 15")
+                        .param("city", "Kram")
+                        .param("telephone", "1234567890123"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("owners/createOrUpdateOwnerForm"))
+                .andExpect(model().attributeHasErrors("owner"))
+                .andExpect(model().attributeHasFieldErrors("owner", "address", "telephone"));
     }
 
     @Test
