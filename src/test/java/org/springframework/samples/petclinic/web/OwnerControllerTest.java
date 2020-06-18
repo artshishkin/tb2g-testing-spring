@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Captor;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +33,8 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.verify;
+import static org.springframework.samples.petclinic.web.OwnerController.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -68,6 +71,43 @@ class OwnerControllerTest {
     }
 
     @Test
+    void testUpdateOwnerPostValid() throws Exception {
+        int ownerId = 123;
+        mockMvc.perform(
+                post("/owners/{ownerId}/edit", ownerId)
+                        .param("firstName", "Foo")
+                        .param("lastName", "Bar")
+                        .param("address", "UnFavouriteStreet 15")
+                        .param("city", "Kram")
+                        .param("telephone", "1234567890"))
+                .andExpect(model().attributeHasNoErrors("owner"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(view().name("redirect:/owners/{ownerId}"))       //valid
+                .andExpect(redirectedUrlTemplate("/owners/{ownerId}", ownerId));  //valid
+//                .andExpect(redirectedUrl("/owners/{ownerId}"));     //invalid
+//                .andExpect(redirectedUrlTemplate("/owners/{ownerId}"));               //invalid
+//        then(clinicService).should().saveOwner(ArgumentMatchers.any(Owner.class));
+        verify(clinicService).saveOwner(ArgumentMatchers.any(Owner.class));
+    }
+
+    @Test
+    void testUpdateOwnerPostInvalid() throws Exception {
+        int ownerId = 123;
+        mockMvc.perform(
+                post("/owners/{ownerId}/edit", ownerId)
+//                        .param("firstName", "Foo")
+                        .param("lastName", "Bar")
+                        .param("address", "UnFavouriteStreet 15")
+                        .param("city", "")
+                        .param("telephone", "1234567890"))
+                .andExpect(model().attributeHasErrors("owner"))
+                .andExpect(model().attributeErrorCount("owner", 2))
+                .andExpect(model().attributeHasFieldErrors("owner", "firstName", "city"))
+                .andExpect(status().isOk())
+                .andExpect(view().name(VIEWS_OWNER_CREATE_OR_UPDATE_FORM));
+    }
+
+    @Test
     void testNewOwnerPostValid() throws Exception {
         mockMvc.perform(
                 post("/owners/new")
@@ -91,7 +131,7 @@ class OwnerControllerTest {
                         .param("city", "Kram")
                         .param("telephone", "1234567890123"))
                 .andExpect(status().isOk())
-                .andExpect(view().name("owners/createOrUpdateOwnerForm"))
+                .andExpect(view().name(VIEWS_OWNER_CREATE_OR_UPDATE_FORM))
                 .andExpect(model().attributeHasErrors("owner"))
                 .andExpect(model().attributeHasFieldErrors("owner", "address", "telephone"));
     }
@@ -100,7 +140,7 @@ class OwnerControllerTest {
     void initCreationForm() throws Exception {
         mockMvc.perform(get("/owners/new"))
                 .andExpect(status().isOk())
-                .andExpect(view().name("owners/createOrUpdateOwnerForm"))
+                .andExpect(view().name(VIEWS_OWNER_CREATE_OR_UPDATE_FORM))
                 .andExpect(model().attributeExists("owner"))
                 .andExpect(model().attribute("owner", instanceOf(Owner.class)));
     }
